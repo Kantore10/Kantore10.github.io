@@ -1,1 +1,77 @@
 /* css styles */
+body {
+  background: linear-gradient(135deg, #fff1f8, #f3e8ff, #e0f7fa);
+  font-family: "Trebuchet MS", sans-serif;
+  color: #3b2f4a;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 60px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, #ffb6c1, #c8a2c8);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  margin-top: 30px;
+}
+
+.intro {
+  max-width: 55%;
+}
+
+.intro h1 {
+  font-size: 3.5rem;
+  color: white;
+}
+
+.intro p {
+  font-size: 1.2rem;
+  color: white;
+}
+
+.button {
+  display: inline-block;
+  margin-top: 20px;
+  background: white;
+  color: #8a2be2;
+  padding: 12px 22px;
+  border-radius: 25px;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.photo-frame img {
+  width: 280px;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 30px;
+  border: 8px solid white;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+.cards {
+  display: flex;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 25px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  flex: 1;
+}
+
+.card h3 {
+  color: #8a2be2;
+}
+
+.center-map {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+

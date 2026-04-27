@@ -1,0 +1,185 @@
+---
+title: "Chloropleth_Maps"
+---
+
+**Informative Maps**
+
+Let’s look at informative maps using state-level housing data from the openintro package. In this tab, I use median home value by state as my numeric variable. For my categorical variable, I group states into Higher Cost and Lower Cost housing states depending on whether their median home value is above or below the national median.
+
+To better explore the data, each variable is displayed in two forms: a static choropleth map and an interactive choropleth map. This allows us to compare patterns across states while also interacting with the maps for more detail.
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+
+library(tidyverse)
+library(maps)
+library(sf)
+library(leaflet)
+library(openintro)
+library(viridis)
+library(htmltools)
+```
+
+```{r}
+#| echo: false
+# map polygons for static plots
+states_polygon <- as_tibble(map_data("state")) |>
+  select(region, group, order, lat, long)
+
+# sf map for interactive plots
+states_sf <- 
+  read_sf("https://rstudio.github.io/leaflet/json/us-states.geojson") |>
+  select(name, geometry)
+
+# create state housing data
+housing_data <- county_complete |>
+  group_by(state) |>
+  summarise(
+    median_home_value = median(median_val_owner_occupied_2010, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    key = str_to_lower(state),
+    cost_group = if_else(
+      median_home_value >
+        median(median_home_value, na.rm = TRUE),
+      "Higher Cost",
+      "Lower Cost"
+    )
+  )
+
+# merge for static map
+states_static <- states_polygon |>
+  left_join(housing_data, by = c("region" = "key"))
+
+# merge for interactive map
+states_interactive <- states_sf |>
+  mutate(key = str_to_lower(name)) |>
+  left_join(housing_data, by = "key") |>
+  filter(!(name %in% c("Alaska","Hawaii","Puerto Rico")))
+```
+
+**Numeric Variable: Median Home Value** **Static Map**
+
+```{r}
+#| echo: false
+#| classes: center-map
+ggplot(states_static,
+       aes(long, lat, group = group)) +
+  geom_polygon(aes(fill = median_home_value),
+               color = "white") +
+  coord_map() +
+  theme_void() +
+  scale_fill_viridis(
+    labels = scales::dollar
+  ) +
+  labs(
+    title = "Median Home Value by State",
+    fill = "Home Value",
+    caption = "Source: openintro package"
+  )
+```
+
+**Insight:** From the map, we can see that housing prices are not the same across the country. Some states have higher median home values, while others have lower ones. This suggests that where a state is located may play a role in housing costs.
+
+**Interactive Map**
+
+```{r}
+#| echo: false
+pal_num <- colorNumeric(
+  "viridis",
+  domain = states_interactive$median_home_value
+)
+
+labels <- lapply(
+  paste0(
+    states_interactive$name,
+    ": $",
+    round(states_interactive$median_home_value,0)
+  ),
+  HTML
+)
+
+leaflet(states_interactive) |>
+  addTiles() |>
+  setView(-96, 37.8, 4) |>
+  addPolygons(
+    fillColor = ~pal_num(median_home_value),
+    weight = 1,
+    color = "white",
+    fillOpacity = 0.7,
+    label = labels
+  ) |>
+  addLegend(
+    pal = pal_num,
+    values = ~median_home_value,
+    title = "Median Home Value",
+    position = "bottomright"
+  )
+```
+
+------------------------------------------------------------------------
+
+**Categorical Variable: Housing Cost Group** **Static Map**
+
+```{r}
+#| echo: false
+#| classes: center-map
+ggplot(states_static,
+       aes(long, lat, group = group)) +
+  geom_polygon(aes(fill = cost_group),
+               color = "white") +
+  coord_map() +
+  theme_void() +
+  scale_fill_manual(
+    values = c("Higher Cost" = "darkred",
+               "Lower Cost" = "steelblue")
+  ) +
+  labs(
+    title = "Higher vs Lower Cost Housing States",
+    fill = "Category",
+    caption = "Source: openintro package"
+  )
+```
+
+**Insight:**
+
+From the map, we can see that higher-cost states are more concentrated in coastal areas, while lower-cost states are more common in the South and Midwest. This shows that location can have a strong connection to housing prices across the country.
+
+**Interactive Map**
+
+```{r}
+#| echo: false
+pal_cat <- colorFactor(
+  c("steelblue", "darkred"),
+  domain = states_interactive$cost_group
+)
+
+labels2 <- lapply(
+  paste0(
+    states_interactive$name,
+    ": ",
+    states_interactive$cost_group
+  ),
+  HTML
+)
+
+leaflet(states_interactive) |>
+  addTiles() |>
+  setView(-96, 37.8, 4) |>
+  addPolygons(
+    fillColor = ~pal_cat(cost_group),
+    weight = 1,
+    color = "white",
+    fillOpacity = 0.7,
+    label = labels2
+  ) |>
+  addLegend(
+    pal = pal_cat,
+    values = ~cost_group,
+    title = "Housing Group",
+    position = "bottomright"
+  )
+```

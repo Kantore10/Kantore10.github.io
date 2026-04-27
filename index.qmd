@@ -1,11 +1,47 @@
 ---
-title: "Kantore10.github.io"
+#title: ""
 ---
 
-This is a Quarto website.
+::: {.hero}
+:::{.intro}
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+# Hi, I’m Ambre 
 
-```{r}
-1 + 1
-```
+Welcome to my little corner of the internet!  
+Before you explore all the exciting things I have been working on this spring in my data science class, let me introduce myself and give you a glimpse of who I am outside the classroom.
+
+:::
+
+::: {.photo-frame}
+![](images/my-image.jpg)
+:::
+:::
+
+
+
+## About Me
+
+::: {.cards}
+
+::: {.card}
+###  My Studies
+Majors: Mathematics, Quantitative Economics
+Concentration(s): Statistics, and Data Science
+:::
+
+::: {.card}
+###  My Interests
+Data analysis, finance, economics, and storytelling with data.
+:::
+
+::: {.card}
+###  My Background
+Originally from Burundi, went to high school in Rwanda, and now studying in the United States.
+:::
+
+::: {.card}
+###  My Hobbies
+Dancing, learning new languages on Duolingo, listening to music, and compiling videos into fun memories.
+:::
+
+:::

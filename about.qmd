@@ -1,9 +1,249 @@
 ---
-title: "About"
+title: "Mini_Project1"
 ---
 
-About this site
+**Exploring Customer Experiences with Murad skincare**
 
-```{r}
-1 + 1
+Murad is a skincare brand started in 1989 by dermatologist Howard Murad. His goal was to create products that help people have healthier skin by using science and proven ingredients. As Dr. Murad says, "Skin is beautiful when it's healthy at the cellular level," which is why the brand focuses on ingredients that hydrate the skin and protect it from damage. Recently, I have been seeing Murad products trending more online and in beauty discussions. I have also been thinking about buying one of their gels, which made me curious about what people who already use these products actually think about them. 
+
+
+**Data Overview**
+
+For this project, I decided to explore sephora customer reviews of Murad products (Acne Control Clarifying Cream Cleanser, Nutrient-Charged Water Gel, AHA/BHA Exfoliating Cleanser, Mini AHA/BHA Exfoliating Cleanser) from Kaggle using text analysis. The original dataset had about 51,852 observations  and 19 variables from many skincare brands. I reduced it to only Murad products, which left me with 1,449 observations and 9 variables. The data includes, the product people reviewed, the written review, their skin type and skin tone, the rating they gave, and the product price. By looking at the words people use in their reviews, I want to see what customers like or dislike about Murad products.Is it really as good as Tiktok makes it seem? Let's see what their experiences have been.
+
+
+```{r,echo=FALSE,include=FALSE}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(tidytext)
+library(textdata)
+library(wordcloud)
+library(wordcloud2)
+library(viridis)
+library(ggthemes)
+library(gutenbergr)
+library(stringr)
+library(gt)
+library(dplyr)
+library(styler)
+library(shiny)
+beauty <- read_csv("reviews_250-500_masked.csv") # load and read the csv file that contain our original dataset
+
+#cleaning data
+beauty_smaller <- beauty |>
+  filter(brand_name == "Murad") |> # keep only reviews from the murad brand
+  select(
+    product_name,
+    product_id,
+    brand_name,
+    review_title,
+    review_text,
+    skin_type,
+    skin_tone,
+    price_usd,
+    rating
+  ) |> # select only the relevant columns for this analysis
+  # Remove rows with missing values in any of the selected columns
+  filter(!is.na(review_title)) |>
+  filter(!is.na(price_usd)) |>
+  filter(!is.na(rating)) |>
+  filter(!is.na(skin_tone)) |>
+  filter(!is.na(skin_type)) |>
+  filter(!is.na(review_text)) |>
+  mutate(review_text = str_replace_all(review_text, "!", ""))|> # remove all exclamation marks from the review text
+  mutate(review_text = str_replace_all(review_text, "\\?", ""))# remove all question marks from the review text
+  
 ```
+
+**Longest Customer Review**
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+
+# Calculate the length of each review and inspect the longest ones
+beauty_smaller|>
+  mutate(review_length = str_length(review_text))|> #creates a new column review length that contains the length of the review text
+  arrange(desc(review_length)) |> # arrange the reviews in descending order based on review length
+  head(5)|> #Keep only the top 5 longest reviews
+  mutate(Rank = 1:5) |>
+  select(Rank, review_length) |>
+  gt()
+```
+
+ Longer reviews usually incorporates detailed experience of the customer, including how they used the product, the effects they noticed over time, and sometimes what the product helped them with the most.
+
+
+The text was tidied using tokenization and stopwords, punctuation, and digits  were removed to prepare for text analysis. For display purposes, only a few sample rows are shown below to keep the table clean and easy to read.
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+
+## Tokenize the review text into individual words for text analysis
+beauty_tidy <- beauty_smaller |>
+  mutate(line = row_number()) |> # Add a line number to each review for tracking
+  unnest_tokens(word, review_text, token = "words") # split the 'review_text' column into individual words, creating one word per row
+
+beauty_smaller |> slice_tail(n = 5) |># Show the last 5 rows of the original cleaned dataset
+  gt()
+
+# Making a professional table using gt package
+beauty_tidy |>
+  slice_head(n = 5) |>   # show first 15 rows
+  gt() |>
+  tab_header(
+    title = "Tokenized Beauty Reviews",
+    subtitle = "Each row shows one word extracted from customer reviews"
+  ) |>
+  cols_label(
+    line = "Review ID",
+    word = "Word"
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) |>
+  fmt_number(columns = line, decimals = 0) |>
+  tab_options(
+    table.width = pct(100),
+    heading.align = "center",
+    table.font.size = px(14),
+    data_row.padding = px(6)
+  ) |>
+  opt_row_striping()
+
+```
+
+ To understand what customers talk about most, I analyzed word frequency after cleaning the text. Customers frequently discuss skin effects, product types, and texture, suggesting that these features dominate their experiences. I wanted to see if it would appear mostly in these reviews.
+
+**Most Common Words in Reviews**
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+
+beauty_tidy |> #calls dataset we want to work with 
+  mutate(word = str_replace_all(word, "’", "'")) |> # replace apostrophes to a simple single quote
+  filter(!str_detect(word, "'")) |> # remove contractions
+  filter(!str_detect(word, "\\d")) |> # remove digits
+  anti_join(stop_words, by = "word") |> # remove stopwords
+  count(word, sort = TRUE) |> ## Count how many times each word appears
+  filter(word != "NA") |>   # Remove any rows with NA as the word
+  slice_max(n, n = 20) |>   # Keep only the top 20 most frequent words
+  ggplot(aes(fct_reorder(word, n), n)) + # Plot a horizontal bar chart of the word counts
+  geom_col() +
+ coord_flip() +
+  labs(
+    title = "Top 20 Most Common Words in Murad Reviews",
+    x = "Word",
+    y = "Count"
+  ) +
+  theme_minimal()
+```
+
+ The most common words in the reviews were skin, product, cleanser, acne, love. This shows that customers focus a lot on how the products affect their skin, whether they help with acne, and which products they really enjoy using.
+
+
+```{r echo=FALSE, include=FALSE}
+#| message: false
+#| warning: false
+get_sentiments(lexicon = "afinn")
+get_sentiments(lexicon = "nrc")
+get_sentiments(lexicon = "bing")
+
+bing_sentiments <- get_sentiments(lexicon = "bing")
+```
+
+
+**Sentiment Analysis**
+
+- Bing sentiment analysis was used to identify positive and negative words in reviews and explore overall sentiment. Looked at the words associated with joy to identify which words from the reviews make people sound happiest about the products.
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+beauty_tidy |>   
+  inner_join(bing_sentiments)|>
+  count(sentiment) |>
+  gt()|>
+    tab_header(
+    title = "Sentiment Count",
+    subtitle = "Positive and negative words in the reviews"
+  ) |>
+  cols_label(
+    sentiment = "Sentiment",
+    n = "Number of Words"
+  ) |>
+   tab_style(
+    style = cell_fill(color = "red"),
+    locations = cells_body(rows = sentiment == "negative")
+  ) |>
+  tab_style(
+    style = cell_fill(color = "darkgreen"),
+    locations = cells_body(rows = sentiment == "positive")
+  ) |>
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything()) )
+
+get_sentiments("nrc") |> #Load the nrc sentiment lexicon
+  filter(sentiment == "joy") |> #Keep only words labeled as expressing joy
+  inner_join(beauty_tidy) |> #Join with our tidy review words to keep only words in the reviews
+  count(word, sort = TRUE)|> #Count how many times each joyful word appears
+  slice_head(n=10)|> # show the top 10 most frequent joyful words
+  gt()
+
+```
+
+  From this analysis, we see that positive sentiment words appear more frequently than negative ones in the review text for the Murad brand. This suggests that, overall, customers tend to express more positive feelings about the products. The  above top joyful words  in the reviews show that customers really value how the products make their skin feel and look. These words emphasize that users' satisfaction comes from both the experience of using the products and the results on their skin. However, this analysis only looks at individual words and doesn’t capture the full context of the reviews. For example, phrases like “didn’t love” or other negations would be counted as the positive word “love”, which could overstate positive sentiment. A more detailed analysis of phrases or sentence context would be needed to fully understand customers’ opinions.
+
+```{r echo=FALSE}
+#| message: false
+#| warning: false
+beauty_tidy |> # call dataset
+  inner_join(bing_sentiments) |> #join the tidy review words with Bing sentiment lexicon
+  count(sentiment, word, sort = TRUE) |> #Count each word by sentiment
+  group_by(sentiment) |> # group words by either negative or positive sentiment
+  slice_max(n, n = 10) |> # keep to ten for each sentiment
+  ungroup() |>
+  ggplot(aes(x = fct_reorder(word, n), y = n, fill = sentiment)) + # plot words by count
+  geom_col() + # use bar to show frequency
+  coord_flip() + # flip axis so as to be able to read better
+  facet_wrap(~sentiment, scales = "free")+ # Separate plots for positive and negative words
+  labs(
+    title = "Top 10 Words by Sentiment in Murad Reviews",
+    x = "Words",
+    y = "Count",
+    fill = "Sentiment"
+  ) +
+  theme_minimal()
+```
+
+  
+ This graph highlights the top 10 most positive and negative words in Murad product reviews, showing which words appear most often for each sentiment.
+
+**What Works for your skin?**
+ 
+```{r echo=FALSE, fig.alt= "A set of horizontal bar charts showing positive mentions of the word “love” in Murad product reviews, separated by product. Each facet represents a different Murad product (Acne Control Clarifying Cream Cleanser, Nutrient-Charged Water Gel, etc...). The x-axis lists skin types (oily, dry, combination, normal), and the y-axis shows the number of reviews, ranging from 0 to the highest count for each product. The appearance shows that different skin types express the most positive mentions for different products, highlighting how individual products may resonate differently with each skin type."}
+beauty_smaller |>
+  filter(str_detect(str_to_lower(review_text), "love")) |> #Keep reviews that mention "love"
+  filter(!str_detect(
+    str_to_lower(review_text),
+    "not love|don't love|didn't love|do not love"
+  )) |> # # Exclude negated mentions like "didn't love"
+  count(skin_type, product_name, sort = TRUE) |> # Count mentions by skin type and product
+  ggplot(aes(x = skin_type, y = n, fill = skin_type)) + # Plot skin types on x-axis, counts on y-axis
+  geom_col() +
+  facet_wrap(~ product_name) + #Create separate panels for each product
+  labs(
+    title = "Positive Mentions of 'Love' by Skin Type for Each Product",
+    x = "Skin Type",
+    y = "Number of Reviews"
+  ) +
+  theme_minimal()+
+   theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10), #Rotate x-axis labels for readability
+    strip.text = element_text(size = 7, face = "bold")) ## Adjust facet labels
+```
+ 
+This visualization shows how different skin types respond to various Murad products. Even within the same brand, a product that works well for one skin type might not resonate as strongly with another. For instance, a moisturizer may receive many "love" mentions from users with dry skin, while a cleanser may be more appreciated by those with oily or combination skin. In our data, normal skin types mentioned "love" less often for the cream cleanser but more frequently for the water gel. This does not mean they disliked the other products, they may have expressed positive feedback using different words. We focused on “love” because it is a strong, clear indicator of admiration toward the product. By visualizing these counts by skin type and product, we can see which items generate the most affection and better understand customer preferences.

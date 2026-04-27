@@ -1,5 +1,6 @@
 project:
   type: website
+  output-dir: docs
 
 website:
   title: "Kantore10.github.io"
@@ -8,6 +9,7 @@ website:
       - href: index.qmd
         text: Home
       - about.qmd
+      - Chloropleth_maps.qmd
 
 format:
   html:
@@ -16,6 +18,5 @@ format:
       - brand
     css: styles.css
     toc: true
-
-
+    page-layout: full
 
