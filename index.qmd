@@ -1,5 +1,10 @@
 ---
 #title: ""
+about:
+  template: trestles
+  links:
+    - icon: github
+      href: https://github.com/Kantore10
 ---
 
 ::: {.hero}

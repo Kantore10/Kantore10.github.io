@@ -6,7 +6,7 @@ title: "Chloropleth_Maps"
 
 Let’s look at informative maps using state-level housing data from the openintro package. In this tab, I use median home value by state as my numeric variable. For my categorical variable, I group states into Higher Cost and Lower Cost housing states depending on whether their median home value is above or below the national median.
 
-To better explore the data, each variable is displayed in two forms: a static choropleth map and an interactive choropleth map. This allows us to compare patterns across states while also interacting with the maps for more detail.
+To better explore the data, each variable is displayed in two forms: a static choropleth map and an interactive Choropleth map. This allows us to compare patterns across states while also interacting with the maps for more detail.
 
 ```{r}
 #| message: false

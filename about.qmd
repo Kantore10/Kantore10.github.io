@@ -1,5 +1,5 @@
 ---
-title: "Mini_Project1"
+title: "Mini_Project_1"
 ---
 
 **Exploring Customer Experiences with Murad skincare**
